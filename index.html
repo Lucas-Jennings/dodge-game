@@ -2,90 +2,144 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dodge the Squares</title>
+  <title>DODGE</title>
+
+  <!-- Futuristic font -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: #111;
+      background: #050505;
       color: #fff;
-      font-family: system-ui, sans-serif;
+      font-family: 'Orbitron', system-ui, sans-serif;
       overflow: hidden;
+      letter-spacing: 0.5px;
     }
-    h1, #info, #hud {
+
+    /* --- TITLE --- */
+    h1 {
       position: absolute;
+      top: 30px;
+      width: 100%;
+      text-align: center;
+      font-size: 42px;
+      font-weight: 700;
+      color: #00eaff;
+      text-shadow: 0 0 12px #00eaff;
+      pointer-events: none;
       z-index: 10;
-      left: 20px;
-      text-shadow: 0 0 6px #000;
     }
-    h1 { top: 10px; font-size: 24px; }
-    #info { top: 45px; font-size: 14px; opacity: 0.8; }
-    #hud { top: 70px; display: flex; gap: 20px; font-size: 14px; }
+
+    /* --- SUBTEXT --- */
+    #info {
+      position: absolute;
+      top: 90px;
+      width: 100%;
+      text-align: center;
+      font-size: 16px;
+      opacity: 0.75;
+      color: #b0faff;
+      text-shadow: 0 0 6px #003b44;
+      z-index: 10;
+    }
+
+    /* --- HUD --- */
+    #hud {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 16px;
+      padding: 10px 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 12px rgba(0,255,255,0.2);
+      z-index: 10;
+    }
 
     #gameContainer {
       position: absolute;
       inset: 0;
       width: 100vw;
       height: 100vh;
-      background: radial-gradient(circle at top, #333, #000);
+      background: radial-gradient(circle at center, #111, #000);
       overflow: hidden;
     }
 
+    /* --- PLAYER + ENEMIES --- */
     #player, .enemy {
       position: absolute;
-      border-radius: 4px;
-    }
-    #player {
-      width: 24px;
-      height: 24px;
-      background: #4caf50;
-      box-shadow: 0 0 10px #4caf50;
-    }
-    .enemy {
-      width: 20px;
-      height: 20px;
-      background: #e91e63;
-      box-shadow: 0 0 10px #e91e63;
+      border-radius: 6px;
     }
 
+    #player {
+      width: 26px;
+      height: 26px;
+      background: #00ff9d;
+      box-shadow: 0 0 14px #00ff9d;
+      z-index: 2;
+    }
+
+    .enemy {
+      width: 22px;
+      height: 22px;
+      background: #ff005d;
+      box-shadow: 0 0 14px #ff005d;
+      z-index: 1; /* behind UI and player */
+    }
+
+    /* --- GAME OVER SCREEN --- */
     #gameOverScreen {
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.85);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 20px;
+      font-size: 22px;
       text-align: center;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s;
+      z-index: 20; /* always on top */
     }
+
     #gameOverScreen.show {
       opacity: 1;
       pointer-events: auto;
     }
 
     button {
-      margin-top: 10px;
-      padding: 8px 16px;
+      margin-top: 20px;
+      padding: 10px 22px;
       border: none;
-      border-radius: 4px;
-      background: #2196f3;
-      color: #fff;
-      font-size: 16px;
+      border-radius: 6px;
+      background: #00eaff;
+      color: #000;
+      font-size: 18px;
+      font-weight: 700;
       cursor: pointer;
+      box-shadow: 0 0 10px #00eaff;
+      transition: 0.2s;
     }
+
     button:hover {
-      background: #1976d2;
+      background: #00bcd4;
+      box-shadow: 0 0 16px #00bcd4;
     }
   </style>
 </head>
 <body>
 
-  <h1>Dodge the Squares</h1>
-  <div id="info">Move with Arrow Keys or WASD. Survive as long as you can.</div>
+  <h1>DODGE</h1>
+  <div id="info">Move with Arrow Keys or WASD. Press Space to Start.</div>
 
   <div id="hud">
     <div>Time: <span id="time">0.0</span>s</div>
@@ -95,6 +149,7 @@
 
   <div id="gameContainer">
     <div id="player"></div>
+
     <div id="gameOverScreen">
       <div id="gameOverText"></div>
       <button id="restartBtn">Play Again</button>
@@ -103,7 +158,7 @@
 
   <script>
     /* ------------------------------
-       FULLSCREEN ON GAME START
+       FULLSCREEN
     ------------------------------ */
     function goFullscreen() {
       if (!document.fullscreenElement) {
@@ -112,9 +167,8 @@
     }
 
     /* ------------------------------
-       ORIGINAL GAME CODE
+       GAME ELEMENTS
     ------------------------------ */
-
     const container = document.getElementById('gameContainer');
     const playerEl = document.getElementById('player');
     const timeEl = document.getElementById('time');
@@ -133,59 +187,78 @@
     });
 
     let keys = {};
-    let player = { x: width / 2 - 12, y: height / 2 - 12, speed: 6 };
+    let player = { x: width / 2, y: height / 2, speed: 6 };
     let enemies = [];
     let running = false;
     let startTime = 0;
     let lastTime = 0;
     let spawnTimer = 0;
-    let bestTime = parseFloat(localStorage.getItem('dodgeBestTime') || '0') || 0;
+
+    let bestTime = parseFloat(localStorage.getItem('neonDodgeBest') || '0');
     bestEl.textContent = bestTime.toFixed(1);
 
+    /* ------------------------------
+       INPUT
+    ------------------------------ */
     document.addEventListener('keydown', e => {
       keys[e.key.toLowerCase()] = true;
       if (!running && e.key === ' ') startGame();
     });
+
     document.addEventListener('keyup', e => {
       keys[e.key.toLowerCase()] = false;
     });
 
     restartBtn.addEventListener('click', startGame);
 
+    /* ------------------------------
+       GAME CONTROL
+    ------------------------------ */
     function resetGame() {
       enemies.forEach(e => e.el.remove());
       enemies = [];
-      player.x = width / 2 - 12;
-      player.y = height / 2 - 12;
+
+      player.x = width / 2;
+      player.y = height / 2;
+
       spawnTimer = 0;
       timeEl.textContent = '0.0';
       enemyCountEl.textContent = '0';
+
       gameOverScreen.classList.remove('show');
     }
 
     function startGame() {
-      goFullscreen(); // ⭐ Fullscreen triggered by SPACE or button click
+      goFullscreen();
       resetGame();
+
       running = true;
       startTime = performance.now();
       lastTime = startTime;
+
       requestAnimationFrame(loop);
     }
 
     function endGame(survivalTime) {
       running = false;
+
       if (survivalTime > bestTime) {
         bestTime = survivalTime;
-        localStorage.setItem('dodgeBestTime', bestTime.toString());
+        localStorage.setItem('neonDodgeBest', bestTime.toString());
         bestEl.textContent = bestTime.toFixed(1);
       }
+
       gameOverText.innerHTML =
         `You survived <b>${survivalTime.toFixed(1)}</b>s<br>` +
         `Best: <b>${bestTime.toFixed(1)}</b>s<br><br>` +
         `<small>Press Space or "Play Again"</small>`;
+
       gameOverScreen.classList.add('show');
     }
 
+    /* ------------------------------
+       ENEMY SPAWNING
+    ------------------------------ */
     function spawnEnemy() {
       const el = document.createElement('div');
       el.className = 'enemy';
@@ -193,17 +266,23 @@
       const edge = Math.floor(Math.random() * 4);
       let x, y;
 
-      if (edge === 0) { x = Math.random() * width; y = -20; }
-      else if (edge === 1) { x = Math.random() * width; y = height + 20; }
-      else if (edge === 2) { x = -20; y = Math.random() * height; }
-      else { x = width + 20; y = Math.random() * height; }
+      if (edge === 0) { x = Math.random() * width; y = -30; }
+      else if (edge === 1) { x = Math.random() * width; y = height + 30; }
+      else if (edge === 2) { x = -30; y = Math.random() * height; }
+      else { x = width + 30; y = Math.random() * height; }
 
       container.appendChild(el);
       enemies.push({ x, y, vx: 0, vy: 0, el });
+
       enemyCountEl.textContent = enemies.length;
     }
 
+    /* ------------------------------
+       ENEMY COLLISIONS (BOUNCE)
+    ------------------------------ */
     function handleEnemyCollisions() {
+      const minDist = 24; // enemy size + buffer
+
       for (let i = 0; i < enemies.length; i++) {
         for (let j = i + 1; j < enemies.length; j++) {
           const a = enemies[i];
@@ -213,20 +292,35 @@
           const dy = b.y - a.y;
           const dist = Math.hypot(dx, dy);
 
-          if (dist < 20) {
+          if (dist > 0 && dist < minDist) {
             const angle = Math.atan2(dy, dx);
-            const force = 6;
+
+            // Stronger bounce force
+            const force = 14;
 
             a.vx -= Math.cos(angle) * force;
             a.vy -= Math.sin(angle) * force;
 
             b.vx += Math.cos(angle) * force;
             b.vy += Math.sin(angle) * force;
+
+            // Push them apart so they don't overlap
+            const overlap = minDist - dist;
+            const push = overlap * 0.5;
+
+            a.x -= Math.cos(angle) * push;
+            a.y -= Math.sin(angle) * push;
+
+            b.x += Math.cos(angle) * push;
+            b.y += Math.sin(angle) * push;
           }
         }
       }
     }
 
+    /* ------------------------------
+       ENEMY MOVEMENT + PLAYER HIT
+    ------------------------------ */
     function updateEnemies(dt) {
       handleEnemyCollisions();
 
@@ -252,19 +346,14 @@
         e.vx *= 0.95;
         e.vy *= 0.95;
 
-        if (e.x < -100 || e.x > width + 100 || e.y < -100 || e.y > height + 100) {
-          e.el.remove();
-          enemies.splice(i, 1);
-          continue;
-        }
-
         e.el.style.transform = `translate(${e.x}px, ${e.y}px)`;
 
+        // Player collision
         if (
-          e.x < player.x + 24 &&
-          e.x + 20 > player.x &&
-          e.y < player.y + 24 &&
-          e.y + 20 > player.y
+          e.x < player.x + 26 &&
+          e.x + 22 > player.x &&
+          e.y < player.y + 26 &&
+          e.y + 22 > player.y
         ) {
           return true;
         }
@@ -272,8 +361,12 @@
       return false;
     }
 
+    /* ------------------------------
+       PLAYER MOVEMENT
+    ------------------------------ */
     function updatePlayer(dt) {
       let dx = 0, dy = 0;
+
       if (keys['arrowup'] || keys['w']) dy -= 1;
       if (keys['arrowdown'] || keys['s']) dy += 1;
       if (keys['arrowleft'] || keys['a']) dx -= 1;
@@ -288,14 +381,18 @@
       player.x += dx * player.speed * dt;
       player.y += dy * player.speed * dt;
 
-      player.x = Math.max(0, Math.min(width - 24, player.x));
-      player.y = Math.max(0, Math.min(height - 24, player.y));
+      player.x = Math.max(0, Math.min(width - 26, player.x));
+      player.y = Math.max(0, Math.min(height - 26, player.y));
 
       playerEl.style.transform = `translate(${player.x}px, ${player.y}px)`;
     }
 
+    /* ------------------------------
+       MAIN LOOP
+    ------------------------------ */
     function loop(timestamp) {
       if (!running) return;
+
       const dtMs = timestamp - lastTime;
       lastTime = timestamp;
       const dt = dtMs / 16.67;
@@ -305,6 +402,7 @@
 
       const spawnInterval = Math.max(450, 1300 - elapsed * 50);
       spawnTimer += dtMs;
+
       if (spawnTimer >= spawnInterval) {
         spawnTimer = 0;
         spawnEnemy();
@@ -320,6 +418,9 @@
       }
     }
 
+    /* ------------------------------
+       INITIAL SCREEN
+    ------------------------------ */
     gameOverText.innerHTML =
       `Press Space to start<br>` +
       `<small>Move with Arrow Keys or WASD</small>`;
